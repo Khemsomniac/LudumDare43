@@ -232,8 +232,8 @@ public class MapMaker : MonoBehaviour
                             else
                             {
                                 gridArray[tempi - tempCount, tempj].tileType = 1;   //assigning non-border water tiles to the tiles between the border tiles
+                                //++tempCount;
                                 print(++tempCount);
-                                print(gridArray[tempi - tempCount, tempj].border);
                             }
                         }
 
@@ -308,6 +308,7 @@ public class MapMaker : MonoBehaviour
             gridArray[gridLength - 1, j].border = false;
         }
 
+        //--tracker.gridi;
         print(--tracker.gridi);                                 //wherever the tracker is, bringing it down by one row
 
         if (TileQueue.Count != 0)                               //Removing the tiles overlapped by the flood from the array
@@ -320,7 +321,7 @@ public class MapMaker : MonoBehaviour
             }
         }
 
-        //CreateRiver();
+        CreateRiver();
 
         pauseFlood = false;                                     //after the wait, allowing the Update function to call on the coroutine
     }

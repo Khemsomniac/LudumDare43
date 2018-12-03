@@ -112,7 +112,6 @@ public class MapMaker : MonoBehaviour
 
 
 
-
     // Use this for initialization
     void Start()
     {
@@ -321,22 +320,37 @@ public class MapMaker : MonoBehaviour
             {
                 if (chunkArray[i, j].tileType == 0)                         //Checking the tileType values from the grid and instantiating the appropriate tiles
                 {
-                    TileQueue.Add(Instantiate(GroundTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
+                    tileObject = Instantiate(GroundTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0)));
+                    tileObject.GetComponent<TileCoordinateInGrid>().i = i + (chunkCount * chunkLength);
+                    tileObject.GetComponent<TileCoordinateInGrid>().j = j;
+                    TileQueue.Add(tileObject);
                 }
                 else if (chunkArray[i, j].tileType == 1)
                 {
+                    tileObject = Instantiate(WaterTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0)));
+                    tileObject.GetComponent<TileCoordinateInGrid>().i = i + (chunkCount * chunkLength);
+                    tileObject.GetComponent<TileCoordinateInGrid>().j = j;
                     TileQueue.Add(Instantiate(WaterTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
                 }
                 else if (chunkArray[i, j].tileType == 2)
                 {
+                    tileObject = Instantiate(LogTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0)));
+                    tileObject.GetComponent<TileCoordinateInGrid>().i = i + (chunkCount * chunkLength);
+                    tileObject.GetComponent<TileCoordinateInGrid>().j = j;
                     TileQueue.Add(Instantiate(LogTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
                 }
                 else if (chunkArray[i, j].tileType == 3)
                 {
+                    tileObject = Instantiate(BridgeTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0)));
+                    tileObject.GetComponent<TileCoordinateInGrid>().i = i + (chunkCount * chunkLength);
+                    tileObject.GetComponent<TileCoordinateInGrid>().j = j;
                     TileQueue.Add(Instantiate(BridgeTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
                 }
                 else if (chunkArray[i, j].tileType == 4)
                 {
+                    tileObject = Instantiate(HouseTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0)));
+                    tileObject.GetComponent<TileCoordinateInGrid>().i = i + (chunkCount * chunkLength);
+                    tileObject.GetComponent<TileCoordinateInGrid>().j = j;
                     TileQueue.Add(Instantiate(HouseTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
                 }
             }
@@ -544,7 +558,7 @@ public class MapMaker : MonoBehaviour
 
         //---Moving the flood one space upwards
         transform.position = transform.position + new Vector3(0f, 0f, 1f);
-        floodCount++;                                                               //Keeping a count of the number of times the flood has moved upwards
+
 
         //---Shifting the entire grid one row downwards to accommodate the new uppermost row
         for (i = 0; i < gridLength - 1; ++i)
@@ -555,6 +569,13 @@ public class MapMaker : MonoBehaviour
             }
         }
 
+        foreach (GameObject tile in TileQueue)
+        {
+            --tile.GetComponent<TileCoordinateInGrid>().i;
+        }
+
+        ++floodCount;                                                               //Keeping a count of the number of times the flood has moved upwards
+
         //---Giving the default new values to the uppermost new row of the grid
         for (j = 0; j < gridBreadth; ++j)
         {
@@ -562,8 +583,6 @@ public class MapMaker : MonoBehaviour
             gridArray[gridLength - 1, j].border = false;
         }
 
-        --tracker.gridi;
-        //print("Tracker: " + --tracker.gridi);                                 //wherever the tracker is, bringing it down by one row
 
         if (TileQueue.Count != 0)                               //Removing the tiles overlapped by the flood from the array
 

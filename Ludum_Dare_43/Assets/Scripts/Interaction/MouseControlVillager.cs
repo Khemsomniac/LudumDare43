@@ -28,6 +28,7 @@ public class MouseControlVillager : MonoBehaviour
     //Saurabh
     public int i, j; //Storing the cell coordinates derived from the mouseWorldCoord
     public float temp; //For calculation and comparing
+    public TileCoordinateInGrid tileCoordinateScript;
     //Saurabh
 
     // Use this for initialization
@@ -122,6 +123,7 @@ public class MouseControlVillager : MonoBehaviour
         {
             //hit.collider.GetComponent<MeshRenderer>().material.color = Color.red;
             mouseWorldCoord = hit.transform.position;
+            tileCoordinateScript = hit.transform.GetComponent<TileCoordinateInGrid>();
             mouseWorldCoordVisualizer.transform.position = mouseWorldCoord;
         }
     }
@@ -132,13 +134,11 @@ public class MouseControlVillager : MonoBehaviour
     /// </summary>
     public void GetCellFromWorldCoord()
     {
-        //Length of a tile here is 1
-        j = (int)mouseWorldCoord.x;
-        temp = mouseWorldCoord.z - mapGrid.floodCount - mapGrid.floodOffset;
-        i = (int)temp;
+        i = tileCoordinateScript.i;
+        j = tileCoordinateScript.j;
         mouseHoveringCell = mapGrid.gridArray[i, j];
         mouseHoveringCellType = mouseHoveringCell.tileType;
-        //print(mouseHoveringCell.tileType);
+        print(mouseHoveringCellType);
     }
     //Saurabh
 

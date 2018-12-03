@@ -23,6 +23,11 @@ public class MouseControlVillager : MonoBehaviour
     public Vector3 mouseWorldCoord; // Where is the cursor pointing at in the 2D game world
     public GameObject mouseWorldCoordVisualizer; // Visualize where the mouse cursor is in the game world
 
+    //Saurabh
+    public int i, j; //Storing the cell coordinates derived from the mouseWorldCoord
+    public float temp; //For calculation and comparing
+    //Saurabh
+
     // Use this for initialization
     void Start()
     {
@@ -114,6 +119,18 @@ public class MouseControlVillager : MonoBehaviour
             mouseWorldCoordVisualizer.transform.position = mouseWorldCoord;
         }
     }
+
+    //Saurabh
+    public void GetCellFromWorldCoord()
+    {
+        //Length of a tile here is 1
+        j = (int)mouseWorldCoord.x;
+        temp = mouseWorldCoord.z - mapGrid.floodCount - mapGrid.floodOffset;
+        i = (int)temp;
+        mouseHoveringCell = mapGrid.gridArray[i, j];
+        //print(mouseHoveringCell.tileType);
+    }
+    //Saurabh
 
     /// <summary>
     /// Show where the player is selecting

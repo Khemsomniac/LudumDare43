@@ -14,6 +14,11 @@ public class MapMaker : MonoBehaviour
     {
         public int tileType;                //0=Ground, 1=Water, 2=Log, 3=Bridge, 4=House
         public bool border = false;         //if true, it means the terrain will change from land to water starting this cell, and the terrain will change from water to land from the next cell.
+        public Villager villagerInCell;     //The villager in this cell (if there should be one)
+        public bool showBridgePreview;      //If true, turn on the bridge preview for this water cell
+        public int iCoord; // The cell's i coord in the gridArray
+        public int jCoord; // The cell's j coord in the gridArray
+        public GameObject bridgePreview; // The bridge preview game object
 
         public Cell(int tile, bool bord)         //constructor
         {
@@ -48,6 +53,9 @@ public class MapMaker : MonoBehaviour
     private bool withinTheLimits;           //temporary variable for helping run the while loops for checking if a certain value is under limits
     private int tempCount;                  //temporary variable for keeping a count for verification of certain conditions
     private bool tempFound;                 //temporary variable for helping run the while loops for checking if a certain value is found or not
+
+    // Test
+    public int coroutineCount; // Count how many coroutines is running
 
     public struct Rivermaker
     {
@@ -105,11 +113,15 @@ public class MapMaker : MonoBehaviour
             for (j = 0; j < gridBreadth; ++j)
             {
                 gridArray[i, j] = new Cell(0, false);
+
+                // Give the cell its coord in the gridArray
+                gridArray[i, j].iCoord = i;
+                gridArray[i, j].jCoord = j;
             }
         }
 
 
-        
+
         tracker = new Rivermaker(0, 0, 0);                      //This means that both the rivermakers are on the bottom most and left most cell of the grid
         anchor = new Rivermaker(0, 0, 0);
 
@@ -124,7 +136,8 @@ public class MapMaker : MonoBehaviour
         anchor = tracker;                                                       //recording the starting position of the tracker to draw the river from after the tracker has done probing
         tracker.mode = 0;
 
-        while (tracker.mode != 4)
+        int outerWhileStopper = 0;
+        while (tracker.mode != 4 && outerWhileStopper < 1000)
         {
             if (tracker.mode == 0)                                              //When the Rivermaker is on the left most grid
             {
@@ -200,7 +213,8 @@ public class MapMaker : MonoBehaviour
                 {
                     withinTheLimits = false;                                        //Setting up the condition for the following while loop
 
-                    while (withinTheLimits == false)                                //To check if the desired cell is appropriate according to the limits of the river width
+                    int whileStopper = 0;
+                    while (withinTheLimits == false && whileStopper < 1000)                                //To check if the desired cell is appropriate according to the limits of the river width
                     {
                         randomHelper = betterRandom(0, 1000);                       //choosing a random number to decide how the rivermaker should proceed to the left
 
@@ -223,7 +237,8 @@ public class MapMaker : MonoBehaviour
                         tempFound = false;                                          //Setting up the conditions for the following while loop
                         tempCount = 1;
 
-                        while (tempFound == false)                                  //Calculating at what distance is the lower border of the potential upper border cell
+                        int whileStopperInner = 0;
+                        while (tempFound == false && whileStopperInner < 1000)                                  //Calculating at what distance is the lower border of the potential upper border cell
                         {
                             if (gridArray[tempi - tempCount, tempj].border == true)
                             {
@@ -232,15 +247,19 @@ public class MapMaker : MonoBehaviour
                             else
                             {
                                 gridArray[tempi - tempCount, tempj].tileType = 1;   //assigning non-border water tiles to the tiles between the border tiles
-                                //++tempCount;
-                                print(++tempCount);
+                                ++tempCount;
+                                //print("tempCount: " + ++tempCount);
                             }
+
+                            whileStopperInner++;
                         }
 
                         if (tempCount >= minRiverWidth - 1 && tempCount <= maxRiverWidth - 1)   //Checking if the distance between between the lower border cell and the potential upper border cell lies with the river width limits
                         {
                             withinTheLimits = true;
                         }
+
+                        whileStopper++;
                     }
 
                     tracker.gridi = tempi;                                          //Moving the tracker to the next cell
@@ -251,6 +270,8 @@ public class MapMaker : MonoBehaviour
 
                 tracker.mode = 0;                                               //Changing the mode of the tracker to check to find the position of the next river
             }
+
+            outerWhileStopper++;
         }
 
         if (anchor.gridi != tracker.gridi)
@@ -282,6 +303,8 @@ public class MapMaker : MonoBehaviour
             offset++;                                           //increasing the offset for real world spawning coordinates of the new tiles
             StartCoroutine(Ascend());                           //starting the coroutine for waiting for sometime and then making the flood ascend onto the map
         }
+
+        //print("coroutineCount" + coroutineCount);
     }
 
 
@@ -290,6 +313,8 @@ public class MapMaker : MonoBehaviour
 
     IEnumerator Ascend()
     {
+        coroutineCount++;
+
         pauseFlood = true;                                      //changing the variable for the Update function so that it does not continuously call on the coroutine
         yield return new WaitForSeconds(0.5f);
         transform.position = transform.position + new Vector3(0f, 0f, 1f);
@@ -308,8 +333,8 @@ public class MapMaker : MonoBehaviour
             gridArray[gridLength - 1, j].border = false;
         }
 
-        //--tracker.gridi;
-        print(--tracker.gridi);                                 //wherever the tracker is, bringing it down by one row
+        --tracker.gridi;
+        //print("Tracker: " + --tracker.gridi);                                 //wherever the tracker is, bringing it down by one row
 
         if (TileQueue.Count != 0)                               //Removing the tiles overlapped by the flood from the array
         {
@@ -324,6 +349,8 @@ public class MapMaker : MonoBehaviour
         CreateRiver();
 
         pauseFlood = false;                                     //after the wait, allowing the Update function to call on the coroutine
+
+        coroutineCount--;
     }
 
     #region Better random number generator                      

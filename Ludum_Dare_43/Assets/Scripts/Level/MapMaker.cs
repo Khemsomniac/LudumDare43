@@ -107,6 +107,10 @@ public class MapMaker : MonoBehaviour
     public int minVillagersInHouse;
 
     List<House> ListOfHouses;               //This will store all the houses which are created
+    House houseObject;                      //This variable is to help manipulate the house objects one by one from the list
+
+
+
 
     // Use this for initialization
     void Start()
@@ -166,6 +170,7 @@ public class MapMaker : MonoBehaviour
 
         //---Initializing the List of Houses
         ListOfHouses = new List<House>();
+        houseObject = new House();
 
         //---Calculating the chunks to be made
         initialChunksPossible = gridLength / chunkLength;
@@ -533,8 +538,6 @@ public class MapMaker : MonoBehaviour
         coroutineCount++;
 
         pauseFlood = true;                                      //changing the variable for the Update function so that it does not continuously call on the coroutine
-
-        pauseFlood = true;                                                          //changing the variable for the Update function so that it does not continuously call on the coroutine
 
         yield return new WaitForSeconds(0.5f);
 

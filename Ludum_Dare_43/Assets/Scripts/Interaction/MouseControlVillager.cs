@@ -174,7 +174,7 @@ public class MouseControlVillager : MonoBehaviour
         {
             if (c.showBridgePreview && c.bridgePreview == null)
             {
-                c.bridgePreview = Instantiate(mapGrid.GroundTile, new Vector3(0.5f + c.jCoord, 0.01f, 0.5f + c.iCoord + mapGrid.offset), Quaternion.Euler(new Vector3(90, 0, 0)));
+                c.bridgePreview = Instantiate(mapGrid.GroundTile, new Vector3(0.5f + c.jCoord, 0.01f, 0.5f + c.iCoord + mapGrid.floodOffset), Quaternion.Euler(new Vector3(90, 0, 0)));
                 c.bridgePreview.GetComponent<MeshRenderer>().material.color = Color.red;
             }
             else if (!c.showBridgePreview && c.bridgePreview != null)

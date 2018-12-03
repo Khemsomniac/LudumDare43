@@ -15,6 +15,7 @@ public class MouseControlVillager : MonoBehaviour
     public Camera gameCamera; // The game's camera
 
     public MapMaker.Cell mouseHoveringCell; // The cell that is currently under the player's mouse cursor
+    public int mouseHoveringCellType; // The tile type of the cell pointed by mouse cursor
     public MapMaker mapGrid; // The game's map data
     public Vector3 mouseDownScreenPosition; // The screen position when the player pressed down LMB
     public bool isMouseDownOnEmptyCell; // Is the LMB pressed down on cells beside log/flood/house
@@ -22,7 +23,7 @@ public class MouseControlVillager : MonoBehaviour
     public int selectedVillagers; // How many villagers are selected
     public Vector3 mouseWorldCoord; // Where is the cursor pointing at in the 2D game world
     public GameObject mouseWorldCoordVisualizer; // Visualize where the mouse cursor is in the game world
-    public List<VillagerGroup> villagerGroups; // 
+    public List<VillagerGroup> villagerGroups; // The villager groups
 
     //Saurabh
     public int i, j; //Storing the cell coordinates derived from the mouseWorldCoord
@@ -42,6 +43,7 @@ public class MouseControlVillager : MonoBehaviour
     void Update()
     {
         UpdateMouseWorldCoord();
+        GetCellFromWorldCoord();
 
         // If the player pressed down LMB
         if (Input.GetButtonDown("Fire1"))
@@ -135,6 +137,7 @@ public class MouseControlVillager : MonoBehaviour
         temp = mouseWorldCoord.z - mapGrid.floodCount - mapGrid.floodOffset;
         i = (int)temp;
         mouseHoveringCell = mapGrid.gridArray[i, j];
+        mouseHoveringCellType = mouseHoveringCell.tileType;
         //print(mouseHoveringCell.tileType);
     }
     //Saurabh
@@ -292,7 +295,8 @@ public class MouseControlVillager : MonoBehaviour
     /// </summary>
     public void UpdateCursorHoverCell()
     {
-        mouseHoveringCell = mapGrid.gridArray[Mathf.FloorToInt(Input.mousePosition.y / Screen.height / normalizedCellOnScreenHeight), Mathf.FloorToInt(Input.mousePosition.x / Screen.width / normalizedCellOnScreenWidth)];
+        //mouseHoveringCell = mapGrid.gridArray[Mathf.FloorToInt(Input.mousePosition.y / Screen.height / normalizedCellOnScreenHeight), 
+        //                                      Mathf.FloorToInt(Input.mousePosition.x / Screen.width / normalizedCellOnScreenWidth)];
         //print("cell type: " + mouseHoveringCell.tileType);
 
         // Show the bridge preview if the player is hovering cursor above river while selected some villagers

@@ -12,6 +12,7 @@ public class MouseControlVillager : MonoBehaviour
     public float normalizedCellOnScreenHeight; // The normalized height of how much one cell occupies the game screen
     public float minMouseDragDistanceToShowSelection; // The minimum distance the player has to drag the mouse to show the selection rectangle
     public GameObject mouseDragAreaSprite; // The UI sprite shows the area the player is dragging over
+    public Camera gameCamera; // The game's camera
 
     public MapMaker.Cell mouseHoveringCell; // The cell that is currently under the player's mouse cursor
     public MapMaker mapGrid; // The game's map data
@@ -19,6 +20,8 @@ public class MouseControlVillager : MonoBehaviour
     public bool isMouseDownOnEmptyCell; // Is the LMB pressed down on cells beside log/flood/house
     public bool hasMouseDragged; // Did the player dragged the mouse cursor since last pressed down LMB
     public int selectedVillagers; // How many villagers are selected
+    public Vector3 mouseWorldCoord; // Where is the cursor pointing at in the 2D game world
+    public GameObject mouseWorldCoordVisualizer; // Visualize where the mouse cursor is in the game world
 
     // Use this for initialization
     void Start()
@@ -29,6 +32,8 @@ public class MouseControlVillager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        UpdateMouseWorldCoord();
+
         // If the player pressed down LMB
         if (Input.GetButtonDown("Fire1"))
         {
@@ -89,6 +94,30 @@ public class MouseControlVillager : MonoBehaviour
         isMouseDownOnEmptyCell = false;
     }
 
+    /// <summary>
+    /// Update where the player cursor is pointing in game world position
+    /// </summary>
+    public void UpdateMouseWorldCoord()
+    {
+        //mouseWorldCoord = gameCamera.ScreenToWorldPoint(Input.mousePosition);
+        //print("mouse pos: " + Input.mousePosition);
+        //mouseWorldCoord.y = 0;
+        //mouseWorldCoordVisualizer.transform.position = mouseWorldCoord;
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        //if (Physics.Raycast(ray, out hit, 50f, ))
+        if (Physics.Raycast(ray, out hit))
+        {
+            //hit.collider.GetComponent<MeshRenderer>().material.color = Color.red;
+            mouseWorldCoord = hit.transform.position;
+            mouseWorldCoordVisualizer.transform.position = mouseWorldCoord;
+        }
+    }
+
+    /// <summary>
+    /// Show where the player is selecting
+    /// </summary>
     public void ShowMouseSelectionArea()
     {
         // If the player pressed down LMB on a cell that's not log/flood/house and start to drag the mouse while pressing down LMB

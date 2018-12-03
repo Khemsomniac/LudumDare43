@@ -15,6 +15,7 @@ public class MapMaker : MonoBehaviour
         public int tileType;                //0=Ground, 1=Water, 2=Log, 3=Bridge, 4=House
         public bool border;                 //if true, it means the terrain will change from land to water starting this cell, and the terrain will change from water to land from the next cell.
         public bool isWalkable;             //if true, then the villagers can walk on this tile
+        public bool hasVillager; // Should this cell have a villager in it
 
         public Villager villagerInCell;     //The villager in this cell (if there should be one)
         public bool showBridgePreview;      //If true, turn on the bridge preview for this water cell

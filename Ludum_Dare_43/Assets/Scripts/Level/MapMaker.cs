@@ -16,6 +16,12 @@ public class MapMaker : MonoBehaviour
         public bool border;                 //if true, it means the terrain will change from land to water starting this cell, and the terrain will change from water to land from the next cell.
         public bool isWalkable;             //if true, then the villagers can walk on this tile
 
+        public Villager villagerInCell;     //The villager in this cell (if there should be one)
+        public bool showBridgePreview;      //If true, turn on the bridge preview for this water cell
+        public int iCoord; // The cell's i coord in the gridArray
+        public int jCoord; // The cell's j coord in the gridArray
+        public GameObject bridgePreview; // The bridge preview game object
+
         public Cell(int tile, bool bord, bool walk)
         {
             tileType = tile;
@@ -65,6 +71,9 @@ public class MapMaker : MonoBehaviour
     private int tempCount;                  //temporary variable for keeping a count for verification of certain conditions
     private bool tempFound;                 //temporary variable for helping run the while loops for checking if a certain value is found or not
 
+    // Test
+    public int coroutineCount; // Count how many coroutines is running
+
     //---This struct will be used to move around in the chunk grid in a pseudo random fashion and mark the tiles that need to be river tiles
     public struct Rivermaker
     {
@@ -103,7 +112,7 @@ public class MapMaker : MonoBehaviour
     void Start()
     {
 
-        
+
         //--Creating the stationary flood and making it a child of the gamecontroller object, to which this script is attached--
         for (i = 0; i < floodOffset - 1; ++i)                                           //instantiating the first some rows of the flood tiles
         {
@@ -129,12 +138,19 @@ public class MapMaker : MonoBehaviour
             for (j = 0; j < gridBreadth; ++j)
             {
                 gridArray[i, j] = new Cell(0, false, true);
+
+                // Give the cell its coord in the gridArray
+                gridArray[i, j].iCoord = i;
+                gridArray[i, j].jCoord = j;
             }
         }
 
         //--Initializing the chunk grid
         chunkArray = new Cell[chunkLength, gridBreadth];
         chunkCount = 0;
+
+        tracker = new Rivermaker(0, 0, 0);                      //This means that both the rivermakers are on the bottom most and left most cell of the grid
+        //anchor = new Rivermaker(0, 0, 0);
 
         for (i = 0; i < chunkLength; ++i)
         {
@@ -153,24 +169,19 @@ public class MapMaker : MonoBehaviour
 
         //---Calculating the chunks to be made
         initialChunksPossible = gridLength / chunkLength;
-        for(k = 0; k < initialChunksPossible; ++k)
+        for (k = 0; k < initialChunksPossible; ++k)
         {
             CreateChunk();
             CreateAndPushTiles();
             PushChunkIntoGrid(k);
-            
         }
 
         //CreateRiver();
     }
 
-
-
-
     //---This function will create a grid representing a chunk of land with a pseudo randomized river flowing horizontal in the middle of it
     void CreateChunk()
     {
-
         //---Initializing the chunk array with the default values
         for (i = 0; i < chunkLength; ++i)
         {
@@ -290,13 +301,9 @@ public class MapMaker : MonoBehaviour
             chunkArray[tracker.gridi, tracker.gridj].border = true;
             chunkArray[tracker.gridi, tracker.gridj].isWalkable = false;
         }
-
         //---Making the houses
 
     }
-
-
-
 
     //---This function will instantiate the tiles at the right proper grid locations on the map and push them into a list to keep a record of them
     void CreateAndPushTiles()
@@ -330,9 +337,6 @@ public class MapMaker : MonoBehaviour
         }
     }
 
-
-
-
     //---This function will update the appropriate grid values by using the chunk grid values
     void PushChunkIntoGrid(int chunkPositionInGrid)
     {
@@ -347,15 +351,14 @@ public class MapMaker : MonoBehaviour
         ++chunkCount;
     }
 
-
-
     //--Determining which cells in the grid are supposed to contain which tiles
     /*void CreateRiver()
     {
         anchor = tracker;                                                       //recording the starting position of the tracker to draw the river from after the tracker has done probing
         tracker.mode = 0;
 
-        while (tracker.mode != 4)
+        int outerWhileStopper = 0;
+        while (tracker.mode != 4 && outerWhileStopper < 1000)
         {
             if (tracker.mode == 0)                                              //When the Rivermaker is on the left most grid
             {
@@ -431,7 +434,8 @@ public class MapMaker : MonoBehaviour
                 {
                     withinTheLimits = false;                                        //Setting up the condition for the following while loop
 
-                    while (withinTheLimits == false)                                //To check if the desired cell is appropriate according to the limits of the river width
+                    int whileStopper = 0;
+                    while (withinTheLimits == false && whileStopper < 1000)                                //To check if the desired cell is appropriate according to the limits of the river width
                     {
                         randomHelper = betterRandom(0, 1000);                       //choosing a random number to decide how the rivermaker should proceed to the left
 
@@ -454,7 +458,8 @@ public class MapMaker : MonoBehaviour
                         tempFound = false;                                          //Setting up the conditions for the following while loop
                         tempCount = 1;
 
-                        while (tempFound == false)                                  //Calculating at what distance is the lower border of the potential upper border cell
+                        int whileStopperInner = 0;
+                        while (tempFound == false && whileStopperInner < 1000)                                  //Calculating at what distance is the lower border of the potential upper border cell
                         {
                             if (gridArray[tempi - tempCount, tempj].border == true)
                             {
@@ -463,15 +468,19 @@ public class MapMaker : MonoBehaviour
                             else
                             {
                                 gridArray[tempi - tempCount, tempj].tileType = 1;   //assigning non-border water tiles to the tiles between the border tiles
-                                //++tempCount;
-                                print(++tempCount);
+                                ++tempCount;
+                                //print("tempCount: " + ++tempCount);
                             }
+
+                            whileStopperInner++;
                         }
 
                         if (tempCount >= minRiverWidth - 1 && tempCount <= maxRiverWidth - 1)   //Checking if the distance between between the lower border cell and the potential upper border cell lies with the river width limits
                         {
                             withinTheLimits = true;
                         }
+
+                        whileStopper++;
                     }
 
                     tracker.gridi = tempi;                                          //Moving the tracker to the next cell
@@ -482,6 +491,8 @@ public class MapMaker : MonoBehaviour
 
                 tracker.mode = 0;                                               //Changing the mode of the tracker to check to find the position of the next river
             }
+
+            outerWhileStopper++;
         }
 
         if (anchor.gridi != tracker.gridi)
@@ -504,8 +515,6 @@ public class MapMaker : MonoBehaviour
     }
     */
 
-
-
     // Update is called once per frame
     void Update()
     {
@@ -514,15 +523,19 @@ public class MapMaker : MonoBehaviour
             //offset++;                                             //increasing the offset for real world spawning coordinates of the new tiles
             StartCoroutine(Ascend());                               //starting the coroutine for waiting for sometime and then making the flood ascend onto the map
         }
+
+        //print("coroutineCount" + coroutineCount);
     }
-
-
-
 
     //---This is the coroutine for the flood to wait for sometime before moving upwards
     IEnumerator Ascend()
     {
+        coroutineCount++;
+
+        pauseFlood = true;                                      //changing the variable for the Update function so that it does not continuously call on the coroutine
+
         pauseFlood = true;                                                          //changing the variable for the Update function so that it does not continuously call on the coroutine
+
         yield return new WaitForSeconds(0.5f);
 
         //---Moving the flood one space upwards
@@ -539,36 +552,43 @@ public class MapMaker : MonoBehaviour
         }
 
         //---Giving the default new values to the uppermost new row of the grid
-        for (j = 0; j < gridBreadth; ++j)                                           
+        for (j = 0; j < gridBreadth; ++j)
         {
             gridArray[gridLength - 1, j].tileType = 0;
             gridArray[gridLength - 1, j].border = false;
         }
 
-        //---Removing the tiles overlapped by the flood from the list of stored tiles
-        if (TileQueue.Count != 0)
-        {
-            for (k = 0; k < gridBreadth; ++k)
+        --tracker.gridi;
+        //print("Tracker: " + --tracker.gridi);                                 //wherever the tracker is, bringing it down by one row
+
+        if (TileQueue.Count != 0)                               //Removing the tiles overlapped by the flood from the array
+
+            //---Removing the tiles overlapped by the flood from the list of stored tiles
+            if (TileQueue.Count != 0)
+
             {
-                tileObject = TileQueue[0];                                          //storing the tile in temporary variable to destroy it
-                TileQueue.RemoveAt(0);                                              //removing the tile from the front of the list
-                Destroy(tileObject);
+                for (k = 0; k < gridBreadth; ++k)
+                {
+                    tileObject = TileQueue[0];                                          //storing the tile in temporary variable to destroy it
+                    TileQueue.RemoveAt(0);                                              //removing the tile from the front of the list
+                    Destroy(tileObject);
+                }
             }
-        }
 
         //---Checking if there is space for a new chunk of grid in the upper part of the array, and making one
-        if(floodCount % chunkLength == 0)
+        if (floodCount % chunkLength == 0)
         {
             CreateChunk();
             CreateAndPushTiles();
             PushChunkIntoGrid(initialChunksPossible - 1);
         }
 
+        pauseFlood = false;                                     //after the wait, allowing the Update function to call on the coroutine
+
+        coroutineCount--;
+
         pauseFlood = false;                                                         //after the wait, allowing the Update function to call on the coroutine
     }
-
-
-
 
     #region Better random number generator                      
 

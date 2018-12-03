@@ -42,6 +42,8 @@ public class MouseControlVillager : MonoBehaviour
         }
 
         ShowMouseSelectionArea();
+        UpdateCursorHoverCell();
+        UpdateBridgePreview();
     }
 
     /// <summary>
@@ -115,11 +117,140 @@ public class MouseControlVillager : MonoBehaviour
     }
 
     /// <summary>
+    /// Show a preview of the bridge when the player is hovering the cursor above a river while some villagers are selected
+    /// </summary>
+    public void ShowBridgePreview()
+    {
+        // Also show a number of how many villagers will be used to form the bridge
+
+        // Store the number of villagers that's being selected
+        int selectedVillagerCount = selectedVillagers;
+
+        int villagerNeedForBridgeCount = 0; // The number of villagers that need to sacrifice to make the bridge
+
+        MapMaker.Cell startingCell = mouseHoveringCell;
+
+        // Flag the water cells for bridge preview
+        while (selectedVillagerCount > 0)
+        {
+            int thisColumnBridgeWidth = 0;
+
+            // If the tile under
+            if (startingCell.tileType == 1)
+            {
+                thisColumnBridgeWidth = MakeBridgeColumn(startingCell.iCoord, startingCell.jCoord);
+
+                // Move starting cell to the right
+                startingCell = mapGrid.gridArray[startingCell.iCoord, startingCell.jCoord + 1];
+            }
+            else if (mapGrid.gridArray[startingCell.iCoord + 1, startingCell.jCoord].tileType == 1)
+            {
+                thisColumnBridgeWidth = MakeBridgeColumn(startingCell.iCoord + 1, startingCell.jCoord);
+
+                // Move starting cell to the right
+                startingCell = mapGrid.gridArray[startingCell.iCoord + 1, startingCell.jCoord + 1];
+            }
+            else
+            {
+                thisColumnBridgeWidth = MakeBridgeColumn(startingCell.iCoord - 1, startingCell.jCoord);
+
+                // Move starting cell to the right
+                startingCell = mapGrid.gridArray[startingCell.iCoord - 1, startingCell.jCoord + 1];
+            }
+
+            villagerNeedForBridgeCount += thisColumnBridgeWidth; // Increase required villager count
+            selectedVillagerCount -= thisColumnBridgeWidth; // Decrease remained villager count
+
+            print("cell coord: " + startingCell.iCoord + ", " + startingCell.jCoord);
+        }
+    }
+
+    /// <summary>
+    /// Update bridge preview
+    /// </summary>
+    public void UpdateBridgePreview()
+    {
+        foreach (MapMaker.Cell c in mapGrid.gridArray)
+        {
+            if (c.showBridgePreview && c.bridgePreview == null)
+            {
+                c.bridgePreview = Instantiate(mapGrid.GroundTile, new Vector3(0.5f + c.jCoord, 0.01f, 0.5f + c.iCoord + mapGrid.floodOffset), Quaternion.Euler(new Vector3(90, 0, 0)));
+                c.bridgePreview.GetComponent<MeshRenderer>().material.color = Color.red;
+            }
+            else if (!c.showBridgePreview && c.bridgePreview != null)
+            {
+                Destroy(c.bridgePreview);
+                c.bridgePreview = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get the width (along the z axis) of a river column, then fill the column with bridge preview
+    /// </summary>
+    /// <param name="iCoord"></param>
+    /// <param name="jCoord"></param>
+    /// <returns></returns>
+    public int MakeBridgeColumn(int iCoord, int jCoord)
+    {
+        ClearBridgePreviewFlag();
+
+        int columnWidth = 1;
+        int startZ = iCoord; // Get the starting i coord
+
+        int whileStopper = 0;
+        // Find top border
+        while (!mapGrid.gridArray[startZ, jCoord].border && whileStopper < 1000)
+        {
+            startZ++;
+            columnWidth++;
+            mapGrid.gridArray[startZ, jCoord].showBridgePreview = true;
+
+            whileStopper++;
+        }
+
+        startZ = iCoord;
+        // Find bottom border
+        while (!mapGrid.gridArray[startZ, jCoord].border && whileStopper < 1000)
+        {
+            startZ--;
+            columnWidth++;
+            mapGrid.gridArray[startZ, jCoord].showBridgePreview = true;
+
+            whileStopper++;
+        }
+
+        return columnWidth;
+    }
+
+    /// <summary>
+    /// Clear the bridge preview flag on the cells
+    /// </summary>
+    public void ClearBridgePreviewFlag()
+    {
+        foreach (MapMaker.Cell c in mapGrid.gridArray)
+        {
+            c.showBridgePreview = false;
+        }
+    }
+
+    /// <summary>
     /// Update the cell that the cursor is currently hover above
     /// </summary>
     public void UpdateCursorHoverCell()
     {
         mouseHoveringCell = mapGrid.gridArray[Mathf.FloorToInt(Input.mousePosition.y / Screen.height / normalizedCellOnScreenHeight), Mathf.FloorToInt(Input.mousePosition.x / Screen.width / normalizedCellOnScreenWidth)];
+        //print("cell type: " + mouseHoveringCell.tileType);
+
+        // Show the bridge preview if the player is hovering cursor above river while selected some villagers
+        if (mouseHoveringCell.tileType == 1 && selectedVillagers > 0)
+        {
+            ShowBridgePreview();
+        }
+        else
+        {
+            ClearBridgePreviewFlag();
+        }
     }
 
     /// <summary>

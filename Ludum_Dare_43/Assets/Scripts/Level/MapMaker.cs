@@ -13,12 +13,14 @@ public class MapMaker : MonoBehaviour
     public class Cell
     {
         public int tileType;                //0=Ground, 1=Water, 2=Log, 3=Bridge, 4=House
-        public bool border = false;         //if true, it means the terrain will change from land to water starting this cell, and the terrain will change from water to land from the next cell.
+        public bool border;                 //if true, it means the terrain will change from land to water starting this cell, and the terrain will change from water to land from the next cell.
+        public bool isWalkable;             //if true, then the villagers can walk on this tile
 
-        public Cell(int tile, bool bord)
+        public Cell(int tile, bool bord, bool walk)
         {
             tileType = tile;
             border = bord;
+            isWalkable = walk;
         }
 
         public Cell()
@@ -85,8 +87,17 @@ public class MapMaker : MonoBehaviour
     Rivermaker tracker;                     //This will probe the available empty grid to make rivers
     //Rivermaker anchor;                    //This will store the tracker before rivermaking, for the purpose of assigning tiles from the anchor to the tracker
 
+    //This is the class which will host villagers
+    public class House
+    {
+        public int housei, housej;          //coordinates of the house on grid, correspond with the bottom left cell of the house    
+        public int numberOfVillagers;       //pseudo random number of villagers that the house is holding
+        public bool isEmpty = false;        //false when it is holding certain number of villagers inside, false when thehy are out of the house
+    }
+    public int maxVillagersInHouse;
+    public int minVillagersInHouse;
 
-
+    List<House> ListOfHouses;               //This will store all the houses which are created
 
     // Use this for initialization
     void Start()
@@ -117,11 +128,11 @@ public class MapMaker : MonoBehaviour
         {
             for (j = 0; j < gridBreadth; ++j)
             {
-                gridArray[i, j] = new Cell(0, false);
+                gridArray[i, j] = new Cell(0, false, true);
             }
         }
 
-        //--Creating the chunk grid
+        //--Initializing the chunk grid
         chunkArray = new Cell[chunkLength, gridBreadth];
         chunkCount = 0;
 
@@ -136,6 +147,9 @@ public class MapMaker : MonoBehaviour
         //---Initializing the rivermakers
         tracker = new Rivermaker(0, 0, 0);                                              //This means that the rivermaker is on the bottom most and left most cell of the grid
         //anchor = new Rivermaker(0, 0, 0);
+
+        //---Initializing the List of Houses
+        ListOfHouses = new List<House>();
 
         //---Calculating the chunks to be made
         initialChunksPossible = gridLength / chunkLength;
@@ -164,14 +178,16 @@ public class MapMaker : MonoBehaviour
             {
                 chunkArray[i, j].tileType = 0;
                 chunkArray[i, j].border = false;
+                chunkArray[i, j].isWalkable = true;
             }
         }
 
-        //---Initializing the tracker for the new chunk
+        //---Initializing the tracker for this chunk
         tracker.gridi = 0;
         tracker.gridj = 0;
         tracker.mode = 0;
 
+        //---Making the river
         //---Tracker mode 0
         riverOffset = betterRandom((chunkLength / 2) - 2, (chunkLength / 2) + 2);       //calculate a pseudo random integer for the position of the river in a chunk
 
@@ -179,6 +195,7 @@ public class MapMaker : MonoBehaviour
 
         chunkArray[tracker.gridi, tracker.gridj].tileType = 1;                          //make the current cell of the grid to hold a border water tile
         chunkArray[tracker.gridi, tracker.gridj].border = true;
+        chunkArray[tracker.gridi, tracker.gridj].isWalkable = false;
 
         //---Tracker mode 1
         for (j = 0; j < gridBreadth - 1; ++j)
@@ -202,6 +219,7 @@ public class MapMaker : MonoBehaviour
 
             chunkArray[tracker.gridi, tracker.gridj].tileType = 1;                      //make the current cell of the grid to hold a border water tile
             chunkArray[tracker.gridi, tracker.gridj].border = true;
+            chunkArray[tracker.gridi, tracker.gridj].isWalkable = false;
         }
 
         //---Tracker mode 2
@@ -211,10 +229,12 @@ public class MapMaker : MonoBehaviour
 
         chunkArray[tracker.gridi, tracker.gridj].tileType = 1;                          //make the current cell of the grid to hold a border water tile
         chunkArray[tracker.gridi, tracker.gridj].border = true;
+        chunkArray[tracker.gridi, tracker.gridj].isWalkable = false;
 
         for (i = 1; i < riverOffset - 1; ++i)
         {
             chunkArray[tracker.gridi - i, tracker.gridj].tileType = 1;                  //assigning non-border water tiles to the tiles between the border tiles
+            chunkArray[tracker.gridi - i, tracker.gridj].isWalkable = false;
         }
 
         //---Tracker mode 3
@@ -268,7 +288,10 @@ public class MapMaker : MonoBehaviour
             tracker.gridj = tempj;
             chunkArray[tracker.gridi, tracker.gridj].tileType = 1;                      //make the current cell of the grid to hold a border water tile
             chunkArray[tracker.gridi, tracker.gridj].border = true;
+            chunkArray[tracker.gridi, tracker.gridj].isWalkable = false;
         }
+
+        //---Making the houses
 
     }
 
@@ -290,6 +313,18 @@ public class MapMaker : MonoBehaviour
                 else if (chunkArray[i, j].tileType == 1)
                 {
                     TileQueue.Add(Instantiate(WaterTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
+                }
+                else if (chunkArray[i, j].tileType == 2)
+                {
+                    TileQueue.Add(Instantiate(LogTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
+                }
+                else if (chunkArray[i, j].tileType == 3)
+                {
+                    TileQueue.Add(Instantiate(BridgeTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
+                }
+                else if (chunkArray[i, j].tileType == 4)
+                {
+                    TileQueue.Add(Instantiate(HouseTile, new Vector3(0.5f + j, 0f, 0.5f + i + floodOffset + (chunkCount * chunkLength)), Quaternion.Euler(new Vector3(90, 0, 0))));
                 }
             }
         }

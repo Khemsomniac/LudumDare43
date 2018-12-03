@@ -22,11 +22,15 @@ public class MouseControlVillager : MonoBehaviour
     public int selectedVillagers; // How many villagers are selected
     public Vector3 mouseWorldCoord; // Where is the cursor pointing at in the 2D game world
     public GameObject mouseWorldCoordVisualizer; // Visualize where the mouse cursor is in the game world
+    public List<VillagerGroup> villagerGroups; // 
 
     // Use this for initialization
     void Start()
     {
+        villagerGroups = new List<VillagerGroup>();
 
+        // Add main group
+        villagerGroups.Add(new VillagerGroup(this));
     }
 
     // Update is called once per frame
@@ -283,21 +287,89 @@ public class MouseControlVillager : MonoBehaviour
     }
 
     /// <summary>
+    /// Update which grid cell should have villager
+    /// </summary>
+    public void UpdateGridVillagerInfo()
+    {
+        foreach (MapMaker.Cell c in mapGrid.gridArray)
+        {
+            c.hasVillager = false;
+        }
+
+        foreach (VillagerGroup v in villagerGroups)
+        {
+            v.UpdateGroupShape();
+        }
+    }
+
+    /// <summary>
     /// Stores information about a group of villagers
     /// </summary>
     public class VillagerGroup
     {
 
 
+        public MouseControlVillager villagerController; // The villager controller
         public List<Villager> villagers; // The villagers in this group
         public int groupFrontRowCellIndex; // The cell index of the first row of the group
+        public MapMaker.Cell topCenterCell; // The cell that is at the center of the top row of the villager group
+                                            // Make sure it never make the group sides exceeds grid width
+        public bool isMainGroup; // Is this the main villager group
+        public int groupWidth; // The width of the villager group
 
         /// <summary>
         /// Updates the group's shape
         /// </summary>
         public void UpdateGroupShape()
         {
+            // Get the villagerCount
+            int villagerCount = villagers.Count;
 
+            // Get the group width for the square shape
+            groupWidth = Mathf.CeilToInt(Mathf.Sqrt(villagerCount));
+
+            // Get the top left cell for the group
+            Vector2 topLeftCellCoord = new Vector2(topCenterCell.iCoord + groupWidth % 2, topCenterCell.jCoord);
+
+            int whileStopper = 0;
+            int groupRowCount = 0; // Count which row we are making
+
+            while (villagerCount > 0 && whileStopper < 1000)
+            {
+                for (int i = 0; i < groupWidth; i++)
+                {
+                    villagerController.mapGrid.gridArray[Mathf.RoundToInt(topLeftCellCoord.x + i),
+                                                         Mathf.RoundToInt(topLeftCellCoord.y + groupRowCount)].hasVillager = true;
+                }
+
+                villagerCount -= groupWidth;
+                groupRowCount++;
+            }
+        }
+
+        /// <summary>
+        /// Make sure the center cell never make the group sides exceeds grid width
+        /// </summary>
+        public void AdjustCenterCell()
+        {
+            // Get the group width
+            groupWidth = Mathf.CeilToInt(Mathf.Sqrt(villagers.Count));
+
+            // Get the distance from the left cell to the center
+            int leftWidth = topCenterCell.iCoord + groupWidth % 2;
+
+            // Adjust center position, if the left side exceeds grid then move center to the right
+            int whileStopper = 0;
+            while (topCenterCell.iCoord - leftWidth < 0 && whileStopper < 1000)
+            {
+                topCenterCell = villagerController.mapGrid.gridArray[topCenterCell.iCoord++, topCenterCell.jCoord];
+            }
+
+            // If the right side exceeds grid then move center to the left
+            while (topCenterCell.iCoord - leftWidth + groupWidth > villagerController.mapGrid.gridBreadth & whileStopper < 1000)
+            {
+                topCenterCell = villagerController.mapGrid.gridArray[topCenterCell.iCoord--, topCenterCell.jCoord];
+            }
         }
 
         /// <summary>
@@ -306,6 +378,15 @@ public class MouseControlVillager : MonoBehaviour
         public void MoveGroup()
         {
 
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public VillagerGroup(MouseControlVillager theVillagerController)
+        {
+            villagerController = theVillagerController;
+            villagers = new List<Villager>();
         }
     }
 }
